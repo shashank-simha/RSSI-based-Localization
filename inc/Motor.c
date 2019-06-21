@@ -71,8 +71,29 @@ policies, either expressed or implied, of the FreeBSD Project.
 // Input: none
 // Output: none
 void Motor_Init(void){
-  // write this as part of Lab 13
-  
+  /* L motor -> PWM - P2.4
+                Dir - P2.6
+                Slp - P5.6
+     R motor -> PWM - P2.5
+                Dir - P3.0
+                Slp - P5.7 */
+
+    P2->SEL0 &= ~0x70;
+    P2->SEL1 &= ~0x70;    //  P2.4, P2.5 and P2.6 as GPIO
+    P2->DIR |= 0x70;      //  make P2.4, P2.5 and P2.6 out
+
+    P3->SEL0 &= ~0x01;
+    P3->SEL1 &= ~0x01;    //  P3.0 as GPIO
+    P3->DIR |= 0x01;      //  make P3.0 out
+
+    P5->SEL0 &= ~0xC0;
+    P5->SEL1 &= ~0xC0;    //  P5.6 and P5.7 as GPIO
+    P5->DIR |= 0xC0;      //  make P5.6 and P5.7 out
+
+    P5->OUT &= ~0xC0;     // Turnoff Motors intially
+
+    PWM_Init12(65000, 32500, 32500);        // initialize PWM on P2.4 & P2.5
+
 }
 
 // ------------Motor_Stop------------
@@ -81,8 +102,7 @@ void Motor_Init(void){
 // Input: none
 // Output: none
 void Motor_Stop(void){
-  // write this as part of Lab 13
-  
+    P5->OUT &= ~0xC0;          // Turnoff Motors (Sleep)
 }
 
 // ------------Motor_Forward------------
@@ -94,8 +114,13 @@ void Motor_Stop(void){
 // Output: none
 // Assumes: Motor_Init() has been called
 void Motor_Forward(uint16_t leftDuty, uint16_t rightDuty){ 
-  // write this as part of Lab 13
-  
+    PWM_Duty1(leftDuty);     // set left motor PWM duty cycle
+    PWM_Duty2(rightDuty);    // set right motor PWM duty cycle
+
+    P2->OUT |= 0x40;         // set left motor direction(forward)
+    P3->OUT |= 0x01;         // set right motor direction(forward)
+
+    P5->OUT |= 0xC0;         // Switch on both the motors i.e; deactivate sleep
 }
 
 // ------------Motor_Right------------
@@ -107,8 +132,13 @@ void Motor_Forward(uint16_t leftDuty, uint16_t rightDuty){
 // Output: none
 // Assumes: Motor_Init() has been called
 void Motor_Right(uint16_t leftDuty, uint16_t rightDuty){ 
-  // write this as part of Lab 13
+    PWM_Duty1(leftDuty);     // set left motor PWM duty cycle
+    PWM_Duty2(rightDuty);    // set right motor PWM duty cycle
 
+    P2->OUT |= 0x40;         // set left motor direction(forward)
+    P3->OUT &= ~0x01;         // set right motor direction(backward)
+
+    P5->OUT |= 0xC0;         // Switch on both the motors i.e; deactivate sleep
 }
 
 // ------------Motor_Left------------
@@ -120,8 +150,13 @@ void Motor_Right(uint16_t leftDuty, uint16_t rightDuty){
 // Output: none
 // Assumes: Motor_Init() has been called
 void Motor_Left(uint16_t leftDuty, uint16_t rightDuty){ 
-  // write this as part of Lab 13
+    PWM_Duty1(leftDuty);     // set left motor PWM duty cycle
+    PWM_Duty2(rightDuty);    // set right motor PWM duty cycle
 
+    P2->OUT &= ~0x40;         // set left motor direction(backward)
+    P3->OUT |= 0x01;         // set right motor direction(forward)
+
+    P5->OUT |= 0xC0;         // Switch on both the motors i.e; deactivate sleep
 }
 
 // ------------Motor_Backward------------
@@ -133,6 +168,11 @@ void Motor_Left(uint16_t leftDuty, uint16_t rightDuty){
 // Output: none
 // Assumes: Motor_Init() has been called
 void Motor_Backward(uint16_t leftDuty, uint16_t rightDuty){ 
-  // write this as part of Lab 13
+    PWM_Duty1(leftDuty);     // set left motor PWM duty cycle
+    PWM_Duty2(rightDuty);    // set right motor PWM duty cycle
 
+    P2->OUT &= ~0x40;         // set left motor direction(backward)
+    P3->OUT &= ~0x01;         // set right motor direction(backward)
+
+    P5->OUT |= 0xC0;         // Switch on both the motors i.e; deactivate sleep
 }

@@ -11,6 +11,17 @@ ORDERED_OBJS += \
 "./main.obj" \
 "./startup_msp432p401r_ccs.obj" \
 "./system_msp432p401r.obj" \
+"./inc/Clock.obj" \
+"./inc/CortexM.obj" \
+"./inc/EUSCIA0.obj" \
+"./inc/FIFO0.obj" \
+"./inc/Motor.obj" \
+"./inc/PWM.obj" \
+"./inc/TimerA0.obj" \
+"./inc/TimerA1.obj" \
+"./inc/TimerA2.obj" \
+"./inc/UART0.obj" \
+"./inc/UART1.obj" \
 "../msp432p401r.cmd" \
 $(GEN_CMDS__FLAG) \
 -llibc.a \
@@ -23,7 +34,9 @@ RMDIR := rm -rf
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include subdir_vars.mk
+-include inc/subdir_vars.mk
 -include subdir_rules.mk
+-include inc/subdir_rules.mk
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -154,8 +167,8 @@ RSLK-Triangulation.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(BIN_OUTPUTS__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "main.obj" "startup_msp432p401r_ccs.obj" "system_msp432p401r.obj" 
-	-$(RM) "main.d" "startup_msp432p401r_ccs.d" "system_msp432p401r.d" 
+	-$(RM) "main.obj" "startup_msp432p401r_ccs.obj" "system_msp432p401r.obj" "inc/Clock.obj" "inc/CortexM.obj" "inc/EUSCIA0.obj" "inc/FIFO0.obj" "inc/Motor.obj" "inc/PWM.obj" "inc/TimerA0.obj" "inc/TimerA1.obj" "inc/TimerA2.obj" "inc/UART0.obj" "inc/UART1.obj" 
+	-$(RM) "main.d" "startup_msp432p401r_ccs.d" "system_msp432p401r.d" "inc/Clock.d" "inc/CortexM.d" "inc/EUSCIA0.d" "inc/FIFO0.d" "inc/Motor.d" "inc/PWM.d" "inc/TimerA0.d" "inc/TimerA1.d" "inc/TimerA2.d" "inc/UART0.d" "inc/UART1.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 
