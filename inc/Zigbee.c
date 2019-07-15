@@ -7,14 +7,9 @@
 #include "../inc/Clock.h"
 #include "../inc/Motor.h"
 
-
 volatile int DB = 0, M = 8, N = 14;
 volatile uint8_t positions[30][30];
 volatile uint8_t b_flag = 0;
-
-extern volatile float x, y, theta;
-
-#define dist(x1, y1, x2, y2) (pow(pow(x1 - x2, 2) + pow(y1 - y2, 2), 0.5))
 
 void UART1_Out(uint8_t *msg, int8_t len)
 {
@@ -117,67 +112,80 @@ void ZigbeeHandler(uint8_t *buff, uint16_t *framelen)
     }
 }
 
-void Location_Filter(uint8_t grid[][30], float rmin, float rmax, float curr_x, float curr_y){
+void Location_Filter(uint8_t grid[][30], float rmin, float rmax, float curr_x,
+                     float curr_y)
+{
 
     int i, j;
     N = 14;
 
-    for(i = 0; i < M; ++i){
-        for(j = 0; j < N; ++j){
-            if((dist(i, j, curr_x, curr_y) < rmin) || (dist(i, j, curr_x, curr_y) > rmax))
+    for (i = 0; i < M; ++i)
+    {
+        for (j = 0; j < N; ++j)
+        {
+            if ((Distance(i, j, curr_x, curr_y) < rmin)
+                    || (Distance(i, j, curr_x, curr_y) > rmax))
                 grid[i][j] = 0;
         }
     }
 }
 
-uint16_t Locate_Beacon(int currentdb){
+uint16_t Locate_Beacon(int currentdb)
+{
     uint16_t next = 0, i, j;
     float avg_x = 0, avg_y = 0;
     float rmin = 0, rmax = 0;
     N = 14;
     uint8_t prev_positions[30][30];
 
-    for(i = 0; i < M; ++i)
-        for(j = 0; j < N; ++j)
+    for (i = 0; i < M; ++i)
+        for (j = 0; j < N; ++j)
             prev_positions[i][j] = positions[i][j];
-    float curr_x = x / 0.6096;
-    float curr_y = y / 0.6096;
+    int curr_x, curr_y;
+    Get_Current_Coordinates(&curr_x, &curr_y);
 
-    if(currentdb > 27 && currentdb <= 35){
+    if (currentdb > 27 && currentdb <= 35)
+    {
         rmin = 0.7;
         rmax = 3.2;
     }
-    else if(currentdb > 35 && currentdb <= 40){
+    else if (currentdb > 35 && currentdb <= 40)
+    {
         rmin = 1.5;
         rmax = 5.5;
     }
-    else if(currentdb > 40 && currentdb <= 45){
+    else if (currentdb > 40 && currentdb <= 45)
+    {
         rmin = 2.5;
         rmax = 6.4;
     }
-    else if(currentdb > 45 && currentdb <= 50){
+    else if (currentdb > 45 && currentdb <= 50)
+    {
         rmin = 3.5;
         rmax = 9;
     }
-    else if(currentdb > 50 && currentdb <= 55){
+    else if (currentdb > 50 && currentdb <= 55)
+    {
         rmin = 4.5;
         rmax = 12;
     }
-    else if(currentdb > 55 && currentdb <= 60){
+    else if (currentdb > 55 && currentdb <= 60)
+    {
         rmin = 6.9;
         rmax = 15;
     }
-    else if(currentdb > 60 && currentdb <= 65){
+    else if (currentdb > 60 && currentdb <= 65)
+    {
         rmin = 9;
         rmax = 20;
     }
-    else if(currentdb > 65){
+    else if (currentdb > 65)
+    {
         rmin = 13;
         rmax = 100;
     }
-    else{
-//        ROM_IntEnable(INT_TIMER0A);
-//        for(i = 0; i < 2000000; ++i);
+    else
+    {
         Clock_Delay1ms(20);
         UART0_OutString("Arrived\n\r");
         Location_Filter(positions, 0, 1, curr_x, curr_y);
@@ -186,9 +194,12 @@ uint16_t Locate_Beacon(int currentdb){
     }
 
     Location_Filter(positions, rmin, rmax, curr_x, curr_y);
-    for(i = 0; i < M; ++i){
-        for(j = 0; j < N; ++j){
-            if(positions[i][j]){
+    for (i = 0; i < M; ++i)
+    {
+        for (j = 0; j < N; ++j)
+        {
+            if (positions[i][j])
+            {
                 avg_x += i;
                 avg_y += j;
             }
@@ -197,19 +208,23 @@ uint16_t Locate_Beacon(int currentdb){
     avg_x /= M;
     avg_y /= N;
 
-    if(avg_x == 0 && avg_y == 0){
-        for(i = 0; i < M; ++i)
-            for(j = 0; j < N; ++j)
+    if (avg_x == 0 && avg_y == 0)
+    {
+        for (i = 0; i < M; ++i)
+            for (j = 0; j < N; ++j)
                 positions[i][j] = prev_positions[i][j];
         rmin -= 2;
         rmax += 2;
-        if(rmin < 0.7)
+        if (rmin < 0.7)
             rmin = 0.7;
 
         Location_Filter(positions, rmin, rmax, curr_x, curr_y);
-        for(i = 0; i < M; ++i){
-            for(j = 0; j < N; ++j){
-                if(positions[i][j]){
+        for (i = 0; i < M; ++i)
+        {
+            for (j = 0; j < N; ++j)
+            {
+                if (positions[i][j])
+                {
                     avg_x += i;
                     avg_y += j;
                 }
@@ -219,16 +234,23 @@ uint16_t Locate_Beacon(int currentdb){
         avg_y /= N;
     }
 
-    if(avg_x == 0 && avg_y == 0){
+    if (avg_x == 0 && avg_y == 0)
+    {
         UART0_OutString("Lost\n\r");
         return 0;
     }
 
     float dist = 60;
-    for(i = 0; i < M; ++i){
-        for(j = 0; j < N; ++j){
-            if(positions[i][j] && (dist(i, j, curr_x, curr_y) - 0.7 * dist(i, j, avg_x, avg_y) < dist)){
-                dist = dist(i, j, curr_x, curr_y) - dist(i, j, avg_x, avg_y);
+    for (i = 0; i < M; ++i)
+    {
+        for (j = 0; j < N; ++j)
+        {
+            if (positions[i][j]
+                    && (Distance(i, j, curr_x, curr_y)
+                            - 0.7 * Distance(i, j, avg_x, avg_y) < dist))
+            {
+                dist = Distance(i, j, curr_x, curr_y)
+                        - Distance(i, j, avg_x, avg_y);
                 next = (i & 0xFF);
                 next |= ((j & 0xFF) << 8);
             }
@@ -237,22 +259,27 @@ uint16_t Locate_Beacon(int currentdb){
     return next;
 }
 
-void Locations_Init(){
+void Locations_Init()
+{
     int i, j;
     N = 14;
-    for(i = 0; i < M; ++i){
-        for(j = 0; j < N; ++j)
+    for (i = 0; i < M; ++i)
+    {
+        for (j = 0; j < N; ++j)
             positions[i][j] = 1;
     }
 }
 
-void Locations_Print(){
+void Locations_Print()
+{
     int i, j;
     UART0_OutChar('\r');
     N = 14;
 
-    for(i = N - 1; i > -1; --i){
-        for(j = 0; j < M; ++j){
+    for (i = N - 1; i > -1; --i)
+    {
+        for (j = 0; j < M; ++j)
+        {
             UART0_OutUDec(positions[j][i]);
             UART0_OutChar(' ');
         }
