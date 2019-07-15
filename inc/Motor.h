@@ -65,13 +65,6 @@ policies, either expressed or implied, of the FreeBSD Project.
 #ifndef MOTOR_H_
 #define MOTOR_H_
 
-typedef enum
-{
-    INITIAL,
-    CONTINUOUS
-} motor_mode_t;
-
-
 // *******Lab 13 solution*******
 
 /**
@@ -167,7 +160,14 @@ void Set_Left_Motor_Direction(int dir);
 void Set_Right_Motor_Direction(int dir);
 void Set_Left_Motor_PWM(uint8_t pwm_normal);
 void Set_Right_Motor_PWM(uint8_t pwm_normal);
-int Rotate_Motors_By_Counts(motor_mode_t mode, uint8_t speed_factor, int left_count, int right_count);
+
+void Rotate_Motors_By_Counts(uint8_t speed_factor, int left_count, int right_count);
+float Distance(float x1, float y1, float x2, float y2);
+float Angle(float x1, float y1, float x2, float y2);
+int Distance_To_Rotation_Count(float distance);
+int Angle_To_Rotation_Count(float degree);
+
+void Get_Current_Coordinates(int *x, int *y);
 void Navigate (float x1,float y1,float x2,float y2);
 
 #endif /* MOTOR_H_ */

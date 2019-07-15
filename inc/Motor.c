@@ -60,11 +60,14 @@
 #include "../inc/Encoder.h"
 #include "../inc/Motor.h"
 #include <ti/devices/msp432p4xx/driverlib/driverlib.h>
+#include <math.h>
 
-#define MAX_PWM 65000
-#define THRESHOLD 30
+#define MAX_PWM 1000
+#define THRESHOLD_L 3
+#define THRESHOLD_R 0
+#define BOT_SPEED_PWM 10
 
-volatile float x = 0, y = 0, r = 0, theta = 0;
+static int current_angle = 0, current_x = 0, current_y = 0;
 
 // ------------Motor_Init------------
 // Initialize GPIO pins for output, which will be
@@ -77,28 +80,30 @@ volatile float x = 0, y = 0, r = 0, theta = 0;
 // Output: none
 void Motor_Init(void)
 {
-    /* L motor -> PWM - P2.4
-     Dir - P2.6
-     Slp - P5.6
-     R motor -> PWM - P2.5
-     Dir - P3.0
-     Slp - P5.7 */
+    /*  L motor  -> PWM - P2.7
+     Dir - P5.4
+     Slp - P3.7
+     R motor  -> PWM - P2.6
+     Dir - P5.5
+     Slp - P3.6
+     */
 
-    P2->SEL0 &= ~0x70;
-    P2->SEL1 &= ~0x70;    //  P2.4, P2.5 and P2.6 as GPIO
-    P2->DIR |= 0x70;      //  make P2.4, P2.5 and P2.6 out
+    MAP_GPIO_setAsOutputPin(GPIO_PORT_P2, GPIO_PIN6);
+    MAP_GPIO_setAsOutputPin(GPIO_PORT_P2, GPIO_PIN7);
 
-    P3->SEL0 &= ~0x01;
-    P3->SEL1 &= ~0x01;    //  P3.0 as GPIO
-    P3->DIR |= 0x01;      //  make P3.0 out
+    MAP_GPIO_setAsOutputPin(GPIO_PORT_P3, GPIO_PIN6);
+    MAP_GPIO_setAsOutputPin(GPIO_PORT_P3, GPIO_PIN7);
 
-    P5->SEL0 &= ~0xC0;
-    P5->SEL1 &= ~0xC0;    //  P5.6 and P5.7 as GPIO
-    P5->DIR |= 0xC0;      //  make P5.6 and P5.7 out
+    MAP_GPIO_setAsOutputPin(GPIO_PORT_P5, GPIO_PIN4);
+    MAP_GPIO_setAsOutputPin(GPIO_PORT_P5, GPIO_PIN5);
 
-    P5->OUT &= ~0xC0;     // Turnoff Motors intially
+    MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P5, GPIO_PIN4); // Initialize direction to forward
+    MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P5, GPIO_PIN5);
 
-    PWM_Init12(MAX_PWM, MAX_PWM / 2, MAX_PWM / 2); // initialize PWM on P2.4 & P2.5
+    MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P3, GPIO_PIN6); // Turnoff Motors intially
+    MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P3, GPIO_PIN7);
+
+    PWM_Init(MAX_PWM, MAX_PWM / 2, MAX_PWM / 2); // initialize PWM on P2.6 & P2.7
 
 }
 
@@ -108,7 +113,8 @@ void Motor_Init(void)
 // Output: none
 void Motor_Start(void)
 {
-    P5->OUT |= 0xC0;         // Switch on both the motors i.e; deactivate sleep
+    MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P3, GPIO_PIN6);
+    MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P3, GPIO_PIN7); // Switch on both the motors i.e; deactivate sleep
 }
 
 // ------------Motor_Stop------------
@@ -118,9 +124,10 @@ void Motor_Start(void)
 // Output: none
 void Motor_Stop(void)
 {
-    P5->OUT &= ~0xC0;          // Turnoff Motors (Sleep)
-    PWM_Duty1(0);              // Set left PWM to 0
-    PWM_Duty2(2);              // Set right PWM to 0
+    MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P3, GPIO_PIN6); // Turnoff Right Motor (Sleep)
+    MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P3, GPIO_PIN7); // Turnoff Left Motor (Sleep)
+    PWM_DutyL(0);                                           // Set left PWM to 0
+    PWM_DutyR(0);                                          // Set right PWM to 0
 }
 
 // ------------Motor_Forward------------
@@ -133,8 +140,8 @@ void Motor_Stop(void)
 // Assumes: Motor_Init() has been called
 void Motor_Forward(uint16_t leftDuty, uint16_t rightDuty)
 {
-    PWM_Duty1(leftDuty);     // set left motor PWM duty cycle
-    PWM_Duty2(rightDuty);    // set right motor PWM duty cycle
+    PWM_DutyL(leftDuty);     // set left motor PWM duty cycle
+    PWM_DutyR(rightDuty);    // set right motor PWM duty cycle
 
     Set_Left_Motor_Direction(true);         // set left motor direction(forward)
     Set_Right_Motor_Direction(true);       // set right motor direction(forward)
@@ -152,8 +159,8 @@ void Motor_Forward(uint16_t leftDuty, uint16_t rightDuty)
 // Assumes: Motor_Init() has been called
 void Motor_Right(uint16_t leftDuty, uint16_t rightDuty)
 {
-    PWM_Duty1(leftDuty);     // set left motor PWM duty cycle
-    PWM_Duty2(rightDuty);    // set right motor PWM duty cycle
+    PWM_DutyL(leftDuty);     // set left motor PWM duty cycle
+    PWM_DutyR(rightDuty);    // set right motor PWM duty cycle
 
     Set_Left_Motor_Direction(true);         // set left motor direction(forward)
     Set_Right_Motor_Direction(false);     // set right motor direction(backward)
@@ -171,8 +178,8 @@ void Motor_Right(uint16_t leftDuty, uint16_t rightDuty)
 // Assumes: Motor_Init() has been called
 void Motor_Left(uint16_t leftDuty, uint16_t rightDuty)
 {
-    PWM_Duty1(leftDuty);     // set left motor PWM duty cycle
-    PWM_Duty2(rightDuty);    // set right motor PWM duty cycle
+    PWM_DutyL(leftDuty);     // set left motor PWM duty cycle
+    PWM_DutyR(rightDuty);    // set right motor PWM duty cycle
 
     Set_Left_Motor_Direction(false);       // set left motor direction(backward)
     Set_Right_Motor_Direction(true);       // set right motor direction(forward)
@@ -190,8 +197,8 @@ void Motor_Left(uint16_t leftDuty, uint16_t rightDuty)
 // Assumes: Motor_Init() has been called
 void Motor_Backward(uint16_t leftDuty, uint16_t rightDuty)
 {
-    PWM_Duty1(leftDuty);     // set left motor PWM duty cycle
-    PWM_Duty2(rightDuty);    // set right motor PWM duty cycle
+    PWM_DutyL(leftDuty);     // set left motor PWM duty cycle
+    PWM_DutyR(rightDuty);    // set right motor PWM duty cycle
 
     Set_Left_Motor_Direction(false);       // set left motor direction(backward)
     Set_Right_Motor_Direction(false);     // set right motor direction(backward)
@@ -237,7 +244,7 @@ void Set_Left_Motor_PWM(uint8_t pwm_normal)
         pwm = MAX_PWM;
     if (pwm < 0)
         pwm = 0;
-    PWM_Duty1(pwm);
+    PWM_DutyL(pwm);
 }
 
 // ------------Set_Right_Motor_PWM------------
@@ -255,7 +262,7 @@ void Set_Right_Motor_PWM(uint8_t pwm_normal)
         pwm = MAX_PWM;
     if (pwm < 0)
         pwm = 0;
-    PWM_Duty2(pwm);
+    PWM_DutyR(pwm);
 }
 
 /*
@@ -267,9 +274,9 @@ void Set_Right_Motor_PWM(uint8_t pwm_normal)
 void Set_Left_Motor_Direction(int dir)
 {
     if (dir)
-        P2->OUT |= 0x40;         // set left motor direction(forward)
+        MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P5, GPIO_PIN4); // set left motor direction(forward)
     else
-        P2->OUT &= ~0x40;         // set left motor direction(backward)
+        MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P5, GPIO_PIN4); // set left motor direction(backward)
 }
 
 /*
@@ -281,9 +288,9 @@ void Set_Left_Motor_Direction(int dir)
 void Set_Right_Motor_Direction(int dir)
 {
     if (dir)
-        P3->OUT |= 0x01;         // set right motor direction(forward)
+        MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P5, GPIO_PIN5); // set right motor direction(forward)
     else
-        P3->OUT &= ~0x01;         // set right motor direction(backward)
+        MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P5, GPIO_PIN5); // set right motor direction(backward)
 }
 
 /*
@@ -293,72 +300,97 @@ void Set_Right_Motor_Direction(int dir)
  *  second call is with mode=CONTINUOUS.  This call will turn on the motors in the proper direction and check if the target count threshold
  *  has been reached.  It should be called continuously until a value of TRUE is returned.
  */
-int Rotate_Motors_By_Counts(motor_mode_t mode, uint8_t speed_factor,
-                            int left_count, int right_count)
+void Rotate_Motors_By_Counts(uint8_t speed_factor, int left_count,
+                             int right_count)
 {
-    static int left_target;
-    static int right_target;
+    Motor_Stop();
+    Reset_Encoder();
+
     int left_error;
     int right_error;
-    bool r = false;
 
-    int temp, temp1;
+    // set motor direction based on if degrees is positive or negative
+    Set_Left_Motor_Direction(left_count >= 0);
+    Set_Right_Motor_Direction(right_count >= 0);
 
-    switch (mode)
+    // set motor PWM
+    Set_Left_Motor_PWM(speed_factor);
+    Set_Right_Motor_PWM(speed_factor);
+
+    left_error = abs(left_count) - Get_Left_Motor_Count();
+    right_error = abs(right_count) - Get_Right_Motor_Count();
+
+    if (left_error > THRESHOLD_L || right_error > THRESHOLD_R)
+        Motor_Start();
+
+    while (left_error > THRESHOLD_L || right_error > THRESHOLD_R)
     {
-    case INITIAL:
-// save the target degrees in a static variable for use later
-//       left_target = get_left_motor_count() + left_count;
-//       right_target = get_right_motor_count() + right_count;
-        temp = Get_Left_Motor_Count();
-        temp1 = Get_Right_Motor_Count();
-        left_target = temp + left_count;
-        right_target = temp1 + right_count;
-
-        // set motor direction based on if degrees is positive or negative
-        Set_Left_Motor_Direction(left_count >= 0);
-        Set_Right_Motor_Direction(right_count >= 0);
-
-        r = false;
-        break;
-
-    case CONTINUOUS:
-        temp = Get_Left_Motor_Count();
-        temp1 = Get_Right_Motor_Count();
-        left_error = left_target - temp;
-        right_error = right_target - temp1;
-
-//       left_error = left_target - get_left_motor_count();
-//       right_error = right_target - get_right_motor_count();
-
-        // set motor direction based on if speed is positive or negative
-        Set_Left_Motor_Direction(left_error >= 0);
-        Set_Right_Motor_Direction(right_error >= 0);
-
         // Stop individual motor if we are within the threshold
-        if (abs(left_error) > THRESHOLD)
-            Set_Left_Motor_PWM(speed_factor);
-        else
+        if (left_error <= THRESHOLD_L)
             Set_Left_Motor_PWM(0);
 
-        if (abs(right_error) > THRESHOLD)
-            Set_Right_Motor_PWM(speed_factor);
-        else
+        if (right_error <= THRESHOLD_R)
             Set_Right_Motor_PWM(0);
 
-        // if both motors are within the threshold then return true to signal "all done"
-        if ((abs(left_error) <= THRESHOLD) && (abs(right_error) <= THRESHOLD))
-            r = true;
-        Motor_Start();
-        break;
+        left_error = abs(left_count) - Get_Left_Motor_Count();
+        right_error = abs(right_count) - Get_Right_Motor_Count();
     }
+    Motor_Stop();
+}
 
-    return r;
+void Get_Current_Coordinates(int *x, int *y)
+{
+    *x = current_x;
+    *y = current_y;
+}
 
+void Navigate(float x1, float y1, float x2, float y2) // parameters are in feet
+{
+   float dist = Distance(x1, y1, x2, y2);
+   float ang = Angle(x1, y1, x2, y2);
+   int rotation_count = 0;
+
+   // Initially turn the bot by the required angle
+   rotation_count = Angle_To_Rotation_Count(ang - current_angle);
+   Rotate_Motors_By_Counts(BOT_SPEED_PWM, rotation_count, -(rotation_count));
+   current_angle =  ang;
+
+   Clock_Delay1ms(1000);
+
+   // Move the bot by required distance
+   rotation_count = Distance_To_Rotation_Count(dist);
+   Rotate_Motors_By_Counts(BOT_SPEED_PWM, rotation_count, rotation_count);
+   current_x = x2;
+   current_y = y2;
+
+   Clock_Delay1ms(1000);
 }
 
 
-void Navigate (float x1,float y1,float x2,float y2)
+float Distance(float x1, float y1, float x2, float y2)
 {
+    float distance = pow(pow(x1 - x2, 2) + pow(y1 - y2, 2), 0.5);
+    return distance;
+}
 
+float Angle(float x1, float y1, float x2, float y2) // angle in degrees
+{
+    float angle = atan2f(x2 - x1, y2 - y1);
+    angle *= (180/M_PI);
+    return angle;
+}
+
+int Distance_To_Rotation_Count(float distance) // distance in feet
+{
+    // rotation count = (Distance/wheel perimeter) * 360
+    distance *= 304.8; // feet to mm conversion
+    int count = (distance/(70 * M_PI)) * 360; // wheel diameter =  70mm => 1 rotation(360 degrees)
+    return count;
+}
+
+int Angle_To_Rotation_Count(float degree)
+{
+    // rotation count = ((chassis perimeter/wheel perimeter) * angle_required) or ((chassis diameter/wheel diameter) * angle_required)
+    int count = (165/70) * degree;
+    return count;
 }
