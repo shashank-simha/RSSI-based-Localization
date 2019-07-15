@@ -12,10 +12,10 @@
   * Sever VPU = VREG jumper on Motor Driver and Power Distribution Board and connect VPU to 3.3V.
   * This is necessary because MSP432 inputs are not 5V tolerant.
   *
-  * Left Encoder A connected to P6.4 (J1)                     .
-  * Left Encoder B connected to P6.5 (J1)
-  * Right Encoder A connected to P5.4 (J3)
-  * Right Encoder B connected to P5.5 (J3)
+  * Left Encoder A connected to P10.5
+  * Left Encoder B connected to P5.2
+  * Right Encoder A connected to P10.4
+  * Right Encoder B connected to P5.0
   *
   * Pololu encoder has 12 counts per revolution (counting all 4 edges).
   * The motor has a gearbox with a 120:1 ratio.
@@ -35,24 +35,24 @@ static int left_motor_count = 0;
 static int right_motor_count = 0;
 
 void Encoder_Init(void){
-    /* Configuring P6.4 as an input and enabling interrupts */
-    MAP_GPIO_setAsInputPin(GPIO_PORT_P6, GPIO_PIN4);
-    MAP_GPIO_interruptEdgeSelect(GPIO_PORT_P6, GPIO_PIN4, GPIO_LOW_TO_HIGH_TRANSITION);
-    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P6, GPIO_PIN4);
-    MAP_GPIO_enableInterrupt(GPIO_PORT_P6, GPIO_PIN4);
-    MAP_Interrupt_enableInterrupt(INT_PORT6);
-
-    MAP_GPIO_setAsInputPin(GPIO_PORT_P6, GPIO_PIN5);
-
-
-    /* Configuring P5.4 as an input and enabling interrupts */
-    MAP_GPIO_setAsInputPin(GPIO_PORT_P5, GPIO_PIN4);
-    MAP_GPIO_interruptEdgeSelect(GPIO_PORT_P5, GPIO_PIN4, GPIO_LOW_TO_HIGH_TRANSITION);
-    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P5, GPIO_PIN4);
-    MAP_GPIO_enableInterrupt(GPIO_PORT_P5, GPIO_PIN4);
+    /* Configuring P5.2 as an input and enabling interrupts */
+    MAP_GPIO_setAsInputPin(GPIO_PORT_P5, GPIO_PIN2);
+    MAP_GPIO_interruptEdgeSelect(GPIO_PORT_P5, GPIO_PIN2, GPIO_LOW_TO_HIGH_TRANSITION);
+    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P5, GPIO_PIN2);
+    MAP_GPIO_enableInterrupt(GPIO_PORT_P5, GPIO_PIN2);
     MAP_Interrupt_enableInterrupt(INT_PORT5);
 
-    MAP_GPIO_setAsInputPin(GPIO_PORT_P5, GPIO_PIN5);
+    MAP_GPIO_setAsInputPin(GPIO_PORT_P10, GPIO_PIN5);
+
+
+    /* Configuring P5.0 as an input and enabling interrupts */
+    MAP_GPIO_setAsInputPin(GPIO_PORT_P5, GPIO_PIN0);
+    MAP_GPIO_interruptEdgeSelect(GPIO_PORT_P5, GPIO_PIN0, GPIO_LOW_TO_HIGH_TRANSITION);
+    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P5, GPIO_PIN0);
+    MAP_GPIO_enableInterrupt(GPIO_PORT_P5, GPIO_PIN0);
+    MAP_Interrupt_enableInterrupt(INT_PORT5);
+
+    MAP_GPIO_setAsInputPin(GPIO_PORT_P10, GPIO_PIN4);
 
 
     /* Enable Master Interrupt */
@@ -68,27 +68,6 @@ int Get_Right_Motor_Count() {
 }
 
 /* GPIO ISR */
-void PORT6_IRQHandler(void)
-{
-    uint32_t status;
-
-    status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P6);
-    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P6, status);
-
-    /* Toggling the output on the LED */
-    if(status & GPIO_PIN4)
-    {
-        if (MAP_GPIO_getInputPinValue(GPIO_PORT_P6, GPIO_PIN5))
-            left_motor_count++;
-        else
-            left_motor_count--;
-
-        MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN2);
-    }
-
-}
-
-/* GPIO ISR */
 void PORT5_IRQHandler(void)
 {
     uint32_t status;
@@ -97,14 +76,30 @@ void PORT5_IRQHandler(void)
     MAP_GPIO_clearInterruptFlag(GPIO_PORT_P5, status);
 
     /* Toggling the output on the LED */
-    if(status & GPIO_PIN4)
+    if (status & GPIO_PIN2)
     {
-        if (MAP_GPIO_getInputPinValue(GPIO_PORT_P5, GPIO_PIN5))
-            right_motor_count++;
-        else
-            right_motor_count--;
-        MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
+        left_motor_count++;
+//        if (MAP_GPIO_getInputPinValue(GPIO_PORT_P10, GPIO_PIN5))
+//            left_motor_count++;
+//        else
+//            left_motor_count--;
+//        MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
+    }
+
+    if (status & GPIO_PIN0)
+    {
+        right_motor_count++;
+//        if (MAP_GPIO_getInputPinValue(GPIO_PORT_P10, GPIO_PIN4))
+//            right_motor_count++;
+//        else
+//            right_motor_count--;
+//        MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
     }
 
 }
 
+void Reset_Encoder()
+{
+    left_motor_count = 0;
+    right_motor_count = 0;
+}

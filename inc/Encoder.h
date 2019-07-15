@@ -10,6 +10,7 @@
 
 
 void Encoder_Init(void);
+void Reset_Encoder(void);
 int Get_Left_Motor_Count();
 int Get_Right_Motor_Count();
 
