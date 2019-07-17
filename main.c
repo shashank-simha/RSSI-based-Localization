@@ -7,6 +7,7 @@
 #include "inc/PWM.h"
 #include "inc/Encoder.h"
 #include "inc/Zigbee.h"
+#include "inc/Switch.h"
 
 #include <ti/devices/msp432p4xx/driverlib/driverlib.h>
 #include <math.h>
@@ -24,8 +25,8 @@ void main(void)
     Motor_Init();       // initialize motor(inturn initialize PWM)
     Encoder_Init();     // initialize encoder (inturn Port interrupts)
     Locations_Init();   // initialize locations
+    Switch_Init();      // intialize S1 and S2
     Locations_Print();  // Print Current location
-
 
     uint8_t response[100];
     uint16_t framelen;
@@ -35,9 +36,11 @@ void main(void)
 
     while (1)           // Loop forever
     {
+        while(UART0_InChar() != 'g'); // or while((!S1_IsPressed()));  // for UART communication(to plugin laptop)
+
         int current_x, current_y;
         Get_Current_Coordinates(&current_x, &current_y);
-        float x1 = 0, y1 = 0;
+        int x1 = -1, y1 = -1;
 
         for (count = 0; count < 10; count++)
         {
@@ -58,30 +61,33 @@ void main(void)
             UART0_OutUHex(currentdb);
             UART0_OutString(" ****\n\r");
 
-            uint16_t next = Locate_Beacon(currentdb);
-            if (next == 0)
+            bool next = Locate_Beacon(currentdb, &x1, &y1);
+            if (!next)
                 break;
             currentdb = 0;
             nzcount = 0;
             Locations_Print();
 
-            x1 = (next & 0xFF);
-            y1 = ((next >> 8) & 0xFF);
             UART0_OutString("x1 = ");
-            UART0_OutUDec((int) (x1));
+            if (x1 < 0)
+                UART0_OutChar('-');
+            UART0_OutUDec(abs(x1));
             UART0_OutString("\t\t");
             UART0_OutString("y1 = ");
-            UART0_OutUDec((int) (y1));
+            if (y1 < 0)
+                UART0_OutChar('-');
+            UART0_OutUDec(abs(y1));
             UART0_OutString("\n\r");
 
-            Clock_Delay1ms(15000);
-            if (x1 == 0 && y1 == 0)
+            Clock_Delay1ms(3000);
+            if (x1 == -1 && y1 == -1)
             {
                 UART0_OutString("Beacon not found\n\r");
                 break;
             }
 
-//            Navigate(x1, y1, x, y);
+            while(UART0_InChar() != 'g'); // or while((!S2_IsPressed())); // for ending UART communication(to plugout laptop and navigate)
+            Navigate(current_x, current_y, x1, y1);
         }
     }
 }
