@@ -14,14 +14,21 @@ ORDERED_OBJS += \
 "./inc/Clock.obj" \
 "./inc/CortexM.obj" \
 "./inc/EUSCIA0.obj" \
+"./inc/Encoder.obj" \
 "./inc/FIFO0.obj" \
+"./inc/FIFO2.obj" \
 "./inc/Motor.obj" \
 "./inc/PWM.obj" \
+"./inc/TA0InputCapture.obj" \
+"./inc/TA2InputCapture.obj" \
+"./inc/TA3InputCapture.obj" \
+"./inc/Tachometer.obj" \
 "./inc/TimerA0.obj" \
 "./inc/TimerA1.obj" \
 "./inc/TimerA2.obj" \
 "./inc/UART0.obj" \
 "./inc/UART1.obj" \
+"./inc/Zigbee.obj" \
 "../msp432p401r.cmd" \
 $(GEN_CMDS__FLAG) \
 -llibc.a \
@@ -167,8 +174,8 @@ RSLK-Triangulation.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(BIN_OUTPUTS__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "main.obj" "startup_msp432p401r_ccs.obj" "system_msp432p401r.obj" "inc/Clock.obj" "inc/CortexM.obj" "inc/EUSCIA0.obj" "inc/FIFO0.obj" "inc/Motor.obj" "inc/PWM.obj" "inc/TimerA0.obj" "inc/TimerA1.obj" "inc/TimerA2.obj" "inc/UART0.obj" "inc/UART1.obj" 
-	-$(RM) "main.d" "startup_msp432p401r_ccs.d" "system_msp432p401r.d" "inc/Clock.d" "inc/CortexM.d" "inc/EUSCIA0.d" "inc/FIFO0.d" "inc/Motor.d" "inc/PWM.d" "inc/TimerA0.d" "inc/TimerA1.d" "inc/TimerA2.d" "inc/UART0.d" "inc/UART1.d" 
+	-$(RM) "main.obj" "startup_msp432p401r_ccs.obj" "system_msp432p401r.obj" "inc/Clock.obj" "inc/CortexM.obj" "inc/EUSCIA0.obj" "inc/Encoder.obj" "inc/FIFO0.obj" "inc/FIFO2.obj" "inc/Motor.obj" "inc/PWM.obj" "inc/TA0InputCapture.obj" "inc/TA2InputCapture.obj" "inc/TA3InputCapture.obj" "inc/Tachometer.obj" "inc/TimerA0.obj" "inc/TimerA1.obj" "inc/TimerA2.obj" "inc/UART0.obj" "inc/UART1.obj" "inc/Zigbee.obj" 
+	-$(RM) "main.d" "startup_msp432p401r_ccs.d" "system_msp432p401r.d" "inc/Clock.d" "inc/CortexM.d" "inc/EUSCIA0.d" "inc/Encoder.d" "inc/FIFO0.d" "inc/FIFO2.d" "inc/Motor.d" "inc/PWM.d" "inc/TA0InputCapture.d" "inc/TA2InputCapture.d" "inc/TA3InputCapture.d" "inc/Tachometer.d" "inc/TimerA0.d" "inc/TimerA1.d" "inc/TimerA2.d" "inc/UART0.d" "inc/UART1.d" "inc/Zigbee.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

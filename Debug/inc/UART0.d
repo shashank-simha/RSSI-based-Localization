@@ -18,9 +18,9 @@ inc/UART0.obj: /home/simha/ti/ccs901/ccs/ccs_base/arm/include/msp.h
 inc/UART0.obj: /home/simha/ti/ccs901/ccs/ccs_base/arm/include/msp432p401r.h
 inc/UART0.obj: /home/simha/ti/ccs901/ccs/ccs_base/arm/include/msp_compatibility.h
 inc/UART0.obj: /home/simha/ti/ccs901/ccs/ccs_base/arm/include/msp432p401r_classic.h
-inc/UART0.obj: /home/simha/ti/ccs901/ccs/ccs_base/arm/include/CMSIS/core_cm4.h
-inc/UART0.obj: /home/simha/ti/ccs901/ccs/ccs_base/arm/include/CMSIS/cmsis_compiler.h
-inc/UART0.obj: /home/simha/ti/ccs901/ccs/ccs_base/arm/include/CMSIS/cmsis_ccs.h
+inc/UART0.obj: /home/simha/ti/simplelink_msp432p4_sdk_3_10_00_08/source/third_party/CMSIS/Include/core_cm4.h
+inc/UART0.obj: /home/simha/ti/simplelink_msp432p4_sdk_3_10_00_08/source/third_party/CMSIS/Include/cmsis_compiler.h
+inc/UART0.obj: /home/simha/ti/simplelink_msp432p4_sdk_3_10_00_08/source/third_party/CMSIS/Include/cmsis_ccs.h
 inc/UART0.obj: /home/simha/ti/ccs901/ccs/ccs_base/arm/include/system_msp432p401r.h
 inc/UART0.obj: /home/simha/ti/ccs901/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/file.h
 
@@ -42,8 +42,8 @@ inc/UART0.obj: /home/simha/ti/ccs901/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/i
 /home/simha/ti/ccs901/ccs/ccs_base/arm/include/msp432p401r.h: 
 /home/simha/ti/ccs901/ccs/ccs_base/arm/include/msp_compatibility.h: 
 /home/simha/ti/ccs901/ccs/ccs_base/arm/include/msp432p401r_classic.h: 
-/home/simha/ti/ccs901/ccs/ccs_base/arm/include/CMSIS/core_cm4.h: 
-/home/simha/ti/ccs901/ccs/ccs_base/arm/include/CMSIS/cmsis_compiler.h: 
-/home/simha/ti/ccs901/ccs/ccs_base/arm/include/CMSIS/cmsis_ccs.h: 
+/home/simha/ti/simplelink_msp432p4_sdk_3_10_00_08/source/third_party/CMSIS/Include/core_cm4.h: 
+/home/simha/ti/simplelink_msp432p4_sdk_3_10_00_08/source/third_party/CMSIS/Include/cmsis_compiler.h: 
+/home/simha/ti/simplelink_msp432p4_sdk_3_10_00_08/source/third_party/CMSIS/Include/cmsis_ccs.h: 
 /home/simha/ti/ccs901/ccs/ccs_base/arm/include/system_msp432p401r.h: 
 /home/simha/ti/ccs901/ccs/tools/compiler/ti-cgt-arm_18.12.2.LTS/include/file.h: 
