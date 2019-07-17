@@ -162,7 +162,7 @@ void Set_Left_Motor_PWM(uint8_t pwm_normal);
 void Set_Right_Motor_PWM(uint8_t pwm_normal);
 
 void Rotate_Motors_By_Counts(uint8_t speed_factor, int left_count, int right_count);
-float Distance(float x1, float y1, float x2, float y2);
+float Distance(int x1, int y1, int x2, int y2);
 float Angle(float x1, float y1, float x2, float y2);
 int Distance_To_Rotation_Count(float distance);
 int Angle_To_Rotation_Count(float degree);

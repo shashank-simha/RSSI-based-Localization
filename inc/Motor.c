@@ -367,7 +367,7 @@ void Navigate(float x1, float y1, float x2, float y2) // parameters are in feet
 }
 
 
-float Distance(float x1, float y1, float x2, float y2)
+float Distance(int x1, int y1, int x2, int y2)
 {
     float distance = pow(pow(x1 - x2, 2) + pow(y1 - y2, 2), 0.5);
     return distance;
