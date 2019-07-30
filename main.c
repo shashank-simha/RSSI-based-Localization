@@ -8,6 +8,7 @@
 #include "inc/Encoder.h"
 #include "inc/Zigbee.h"
 #include "inc/Switch.h"
+#include "inc/LED.h"
 
 #include <ti/devices/msp432p4xx/driverlib/driverlib.h>
 #include <math.h>
@@ -17,7 +18,7 @@
  */
 void main(void)
 {
-    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;		// stop watchdog timer
+    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;     // stop watchdog timer
 
     UART0_Init();       // initialize UART0 (Serial Monitor)
     UART1_Init();       // initialize UART1 (Zigbee module)
@@ -26,6 +27,7 @@ void main(void)
     Encoder_Init();     // initialize encoder (inturn Port interrupts)
     Locations_Init();   // initialize locations
     Switch_Init();      // intialize S1 and S2
+    LED_Init();         // intialize RGB LEDs
     Locations_Print();  // Print Current location
 
     uint8_t response[100];
@@ -36,7 +38,7 @@ void main(void)
 
     while (1)           // Loop forever
     {
-        while(UART0_InChar() != 'g'); // or while((!S1_IsPressed()));  // for UART communication(to plugin laptop)
+//        while(UART0_InChar() != 'g');  // while(UART0_InChar() != 'g') or while((!S1_IsPressed()));  // for UART communication(to plugin laptop)
 
         int current_x, current_y;
         Get_Current_Coordinates(&current_x, &current_y);
@@ -79,14 +81,16 @@ void main(void)
             UART0_OutUDec(abs(y1));
             UART0_OutString("\n\r");
 
-            Clock_Delay1ms(3000);
+            Clock_Delay1ms(1000);
             if (x1 == -1 && y1 == -1)
             {
                 UART0_OutString("Beacon not found\n\r");
+                LED_Off();
+                Blue_On();
                 break;
             }
 
-            while(UART0_InChar() != 'g'); // or while((!S2_IsPressed())); // for ending UART communication(to plugout laptop and navigate)
+//            while(UART0_InChar() != 'g'); // while(UART0_InChar() != 'g');  or while((!S2_IsPressed())); // for ending UART communication(to plugout laptop and navigate)
             Navigate(current_x, current_y, x1, y1);
         }
     }
