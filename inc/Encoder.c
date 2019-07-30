@@ -75,25 +75,14 @@ void PORT5_IRQHandler(void)
     status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P5);
     MAP_GPIO_clearInterruptFlag(GPIO_PORT_P5, status);
 
-    /* Toggling the output on the LED */
     if (status & GPIO_PIN2)
     {
         left_motor_count++;
-//        if (MAP_GPIO_getInputPinValue(GPIO_PORT_P10, GPIO_PIN5))
-//            left_motor_count++;
-//        else
-//            left_motor_count--;
-//        MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
     }
 
     if (status & GPIO_PIN0)
     {
         right_motor_count++;
-//        if (MAP_GPIO_getInputPinValue(GPIO_PORT_P10, GPIO_PIN4))
-//            right_motor_count++;
-//        else
-//            right_motor_count--;
-//        MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN1);
     }
 
 }
