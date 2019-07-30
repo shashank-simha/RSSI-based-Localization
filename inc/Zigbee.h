@@ -1,3 +1,10 @@
+/*
+ * Zigbee.h
+ *
+ *  Created on: 20-June-2019
+ *      Author: simha
+ */
+
 #ifndef ZIGBEE_H_
 #define ZIGBEE_H_
 
@@ -6,16 +13,16 @@
 #include <stdbool.h>
 
 void UART1_Out(uint8_t *, int8_t);
-void Outmessage(uint8_t *response, int8_t *framelen);
+void Outmessage(uint8_t *response, uint16_t *framelen);
 void InResponce(uint8_t *response, uint16_t *framelen);
 void UART1_data(uint8_t data[], uint8_t size);
-void ZigbeeHandler(uint8_t *buff, int8_t *framelen);
+void ZigbeeHandler(uint8_t *buff, uint16_t *framelen);
 
 
 bool Locate_Beacon(int currentdb, int *x1, int *y1);
 void Locations_Init();
 void Locations_Print();
-void Location_Filter(uint8_t grid[29][29], float rmin, float rmax, int curr_x,int curr_y);
+void Location_Filter(uint8_t grid[10][10], float rmin, float rmax, int curr_x, int curr_y);
 
 extern volatile int DB;
 #endif /* ZIGBEE_H_ */

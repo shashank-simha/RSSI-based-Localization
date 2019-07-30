@@ -1,3 +1,10 @@
+/*
+ * Zigbee.c
+ *
+ *  Created on: 20-June-2019
+ *      Author: simha
+ */
+
 #include <stdint.h>
 #include <stdbool.h>
 #include "msp.h"
@@ -7,11 +14,13 @@
 #include "../inc/UART0.h"
 #include "../inc/Clock.h"
 #include "../inc/Motor.h"
+#include "../inc/LED.h"
 
-volatile int DB = 0, M = 29, N = 29, Center = 14;
-volatile uint8_t positions[29][29];
+volatile int DB = 0, M = 10, N = 10, Center = 4;
+volatile uint8_t positions[10][10];
 volatile uint8_t b_flag = 0;
-static bool min_flag = true;
+static bool min_flag = false;
+static int move_flag = 0;
 
 void UART1_Out(uint8_t *msg, int8_t len)
 {
@@ -23,7 +32,7 @@ void UART1_Out(uint8_t *msg, int8_t len)
     }
 }
 
-void Outmessage(uint8_t *response, int8_t *framelen)
+void Outmessage(uint8_t *response, uint16_t *framelen)
 {
 
     static uint8_t msg1[] = { 0x7E, 0x00, 0x16, 0x10, 0x01, 0x00, 0x00, 0x00,
@@ -114,17 +123,17 @@ void ZigbeeHandler(uint8_t *buff, uint16_t *framelen)
     }
 }
 
-void Location_Filter(uint8_t grid[29][29], float rmin, float rmax, int curr_x,
+void Location_Filter(uint8_t grid[10][10], float rmin, float rmax, int curr_x,
                      int curr_y)
 {
     int i, j;
-    for (i = -Center; i <= Center; i++)
+    for (i = 0; i < M; i++)
     {
-        for (j = -Center; j <= Center; j++)
+        for (j = 0; j < N; j++)
         {
             if ((Distance(i, j, curr_x, curr_y) < rmin)
                     || (Distance(i, j, curr_x, curr_y) > rmax))
-                grid[j + Center][i + Center] = 0;
+                grid[i][j] = 0;
         }
     }
 }
@@ -135,7 +144,7 @@ bool Locate_Beacon(int currentdb, int *x1, int *y1)
     bool next = false;
     float rmin = 0, rmax = 0;
     int curr_x, curr_y;
-    uint8_t temp_positions[29][29];
+    uint8_t temp_positions[10][10];
     for (i = 0; i < M; i++)
     {
         for (j = 0; j < N; j++)
@@ -144,103 +153,123 @@ bool Locate_Beacon(int currentdb, int *x1, int *y1)
 
     Get_Current_Coordinates(&curr_x, &curr_y);
 
-    if (currentdb > 27 && currentdb <= 35)
+//    if (currentdb > 0x20 && currentdb <= 0x24)
+//    {
+//        rmin = 1.5;
+//        rmax = 3.0; //2
+//    }
+    if (currentdb > 0x24 && currentdb <= 0x28)
     {
-        rmin = 0.7;
-        rmax = 3.2;
+        rmin = 1.5; //2
+        rmax = 4.0; //3
     }
-    else if (currentdb > 35 && currentdb <= 40)
+    else if (currentdb > 0x28 && currentdb <= 0x2C)
     {
-        rmin = 1.5;
-        rmax = 5.5;
+        rmin = 2.0; //3
+        rmax = 5.0; //3.5
     }
-    else if (currentdb > 40 && currentdb <= 45)
+    else if (currentdb > 0x2C && currentdb <= 0x30)
     {
-        rmin = 2.5;
-        rmax = 6.4;
+        rmin = 3.0; //3.5
+        rmax = 6.0; //4
     }
-    else if (currentdb > 45 && currentdb <= 50)
+    else if (currentdb > 0x30 && currentdb <= 0x34)
     {
-        rmin = 3.5;
-        rmax = 9;
+        rmin = 3.5; //4
+        rmax = 7.0; //5.25
     }
-    else if (currentdb > 50 && currentdb <= 55)
+    else if (currentdb > 0x34 && currentdb <= 0x38)
     {
-        rmin = 4.5;
-        rmax = 12;
+        rmin = 4.5; //5.25
+        rmax = 8.5; //6.75
     }
-    else if (currentdb > 55 && currentdb <= 60)
+    else if (currentdb > 0x38 && currentdb <= 0x3C)
     {
-        rmin = 6.9;
-        rmax = 15;
+        rmin = 6.0; //6.75
+        rmax = 11.0; //9
     }
-    else if (currentdb > 60 && currentdb <= 65)
+    else if (currentdb > 0x3C && currentdb <= 0x40)
     {
-        rmin = 9;
-        rmax = 20;
+        rmin = 8.0; //9
+        rmax = 13.0; //12
     }
-    else if (currentdb > 65)
+    else if (currentdb > 0x40)
     {
-        rmin = 13;
-        rmax = 100;
+        rmin = 11.0; //12
+        rmax = 50;
     }
     else
     {
         UART0_OutString("Arrived\n\r");
         Location_Filter(temp_positions, 0, 1, curr_x, curr_y);
         Locations_Print();
+        Green_On();
         return 0;
     }
 
     Location_Filter(temp_positions, rmin, rmax, curr_x, curr_y);
     UART0_OutString("\n\n\r");
-    for (i = N-1; i >= 0; i--)
+    for (i = N - 1; i >= 0; i--)
     {
-        if (i == Center)
-            UART0_OutString("\n\r");
+//        if (i == Center)
+//            UART0_OutString("\n\r");
         for (j = 0; j < M; j++)
         {
-            if (j == Center)
-                UART0_OutChar(' ');
+//            if (j == Center)
+//                UART0_OutChar(' ');
             UART0_OutUDec(temp_positions[i][j]);
             UART0_OutChar(' ');
-            if (j == Center)
-                UART0_OutChar(' ');
+//            if (j == Center)
+//                UART0_OutChar(' ');
         }
-        if (i == Center)
-            UART0_OutString("\n\r");
+//        if (i == Center)
+//            UART0_OutString("\n\r");
         UART0_OutChar('\n');
         UART0_OutChar('\r');
     }
     UART0_OutString("\n\n\r");
-    Clock_Delay1ms(3000);
 
     for (i = 0; i < M; i++)
         for (j = 0; j < N; j++)
             positions[i][j] = positions[i][j] && temp_positions[i][j];
 
     // set current coordinates to 0
-    positions[curr_y + Center][curr_x + Center] = 0;
+    positions[curr_y][curr_x] = 0;
 
     // next position = min(i+j) where position[i][j] == 1, if min_flag == 1
     //                 max(i+j) where position[i][j] == 1, if min_flag == 0
     // if all grid elements are zero, print "Lost"
-    int min_i = curr_x, min_j = curr_y, max_i = curr_x, max_j = curr_y, sum = 0;
-    for (i = -Center; i <= Center; i++)
-    {
-        for (j = -Center; j <= Center; j++)
-        {
-            sum += positions[j + Center][i + Center];
+    int min_i = 9, min_j = 9, max_i = 0, max_j = 0, sum = 0, sum_i = 0, sum_j =
+            0, count = 0;
 
-            if (positions[j + Center][i + Center]
-                    && ((i + j) < (min_i + min_j)))
+    *x1 = 100; //some big number
+    *y1 = 100;
+
+    for (i = 0; i < M; i++)
+    {
+        for (j = 0; j < N; j++)
+        {
+            sum += positions[j][i];
+            if (positions[j][i])
+            {
+                count++;
+                sum_i += i;
+                sum_j += j;
+                if (Distance(curr_x, curr_y, j, i)
+                        < Distance(curr_x, curr_y, *x1, *y1))
+                {
+                    *x1 = j;
+                    *y1 = i;
+                }
+            }
+
+            if (positions[j][i] && ((i + j) < (min_i + min_j)))
             {
                 min_i = i;
                 min_j = j;
             }
 
-            if (positions[j + Center][i + Center]
-                    && ((i + j) > (max_i + max_j)))
+            if (positions[j][i] && ((i + j) > (max_i + max_j)))
             {
                 max_i = i;
                 max_j = j;
@@ -252,23 +281,49 @@ bool Locate_Beacon(int currentdb, int *x1, int *y1)
     {
         UART0_OutString("Lost\n\r");
         Locations_Print();
+        Red_On();
         return 0;
     }
-
-    if (min_flag)
-    {
-        *x1 = min_i;
-        *y1 = min_j;
-    }
-
-    else
-    {
-        *x1 = max_i;
-        *y1 = max_j;
-    }
+//
+//    if (min_flag)
+//    {
+//        *x1 = min_i;
+//        *y1 = min_j;
+//    }
+//
+//    else
+//    {
+//        *x1 = max_i;
+//        *y1 = max_j;
+//    }
+//
 
     // toggle min_flag
-    min_flag = !min_flag;
+//    min_flag = !min_flag;
+
+//    *x1 = (min_i + max_i)/2;
+//    *y1 = (min_j + max_j)/2;
+
+//    if (move_flag % 3 == 0)
+//    {
+//        *x1 = max_j;
+//        *y1 = max_i;
+//    }
+//
+//    else if (move_flag % 3 == 1)
+//    {
+//        *x1 = sum_j / count;
+//        *y1 = sum_i / count;
+//    }
+//
+//    else
+//    {
+//        *x1 = min_j;
+//        *y1 = min_i;
+//    }
+//
+//    move_flag++;
+
     next = true;
     return next;
 }
@@ -289,19 +344,19 @@ void Locations_Print()
     UART0_OutChar('\r');
     for (i = N - 1; i >= 0; i--)
     {
-        if (i == Center)
-            UART0_OutString("\n\r");
+//        if (i == Center)
+//            UART0_OutString("\n\r");
         for (j = 0; j < M; j++)
         {
-            if (j == Center)
-                UART0_OutChar(' ');
+//            if (j == Center)
+//                UART0_OutChar(' ');
             UART0_OutUDec(positions[i][j]);
             UART0_OutChar(' ');
-            if (j == Center)
-                UART0_OutChar(' ');
+//            if (j == Center)
+//                UART0_OutChar(' ');
         }
-        if (i == Center)
-            UART0_OutString("\n\r");
+//        if (i == Center)
+//            UART0_OutString("\n\r");
         UART0_OutChar('\n');
         UART0_OutChar('\r');
     }
