@@ -54,6 +54,7 @@
 // Right motor PWM connected to P2.6/TA0CCP3 (J4.39)
 // Right motor enable connected to P3.6 (J2.11)
 #include <stdint.h>
+#include <stdbool.h>
 #include "msp.h"
 #include "../inc/CortexM.h"
 #include "../inc/PWM.h"
@@ -63,9 +64,14 @@
 #include <math.h>
 
 #define MAX_PWM 1000
-#define THRESHOLD_L 3
+#define THRESHOLD_L 0
 #define THRESHOLD_R 0
 #define BOT_SPEED_PWM 10
+
+#define PWMR_CORRECTION_FACTOR_FORWARD 1.03
+#define PWML_CORRECTION_FACTOR_FORWARD 1
+#define PWMR_CORRECTION_FACTOR_ROTATE 1.011//1.024045
+#define PWML_CORRECTION_FACTOR_ROTATE 1
 
 static int current_angle = 0, current_x = 0, current_y = 0;
 
@@ -206,36 +212,12 @@ void Motor_Backward(uint16_t leftDuty, uint16_t rightDuty)
     Motor_Start();         // Switch on both the motors i.e; deactivate sleep
 }
 
-// ------------Turn_Left------------
-// Turn the robot to the left by an angle of theta
-// Input: angle t
-// Output: none
-// Assumes: Motor_Init() has been called
-void Turn_Left(uint8_t t)
-{
-    Motor_Left(32500, 32500);    // call Motor_Left function with PWM values
-    Clock_Delay1ms((1000 / 360) * t);       // 1 sec delay => 360deg rotation
-    Motor_Stop();
-}
-
-// ------------Turn_Right------------
-// Turn the robot to the right by an angle of theta
-// Input: angle t
-// Output: none
-// Assumes: Motor_Init() has been called
-void Turn_Right(uint8_t t)
-{
-    Motor_Right(32500, 32500);    // call Motor_Left function with PWM values
-    Clock_Delay1ms((1000 / 360) * t);       // 1 sec delay => 360deg rotation
-    Motor_Stop();
-}
-
 // ------------Set_Left_Motor_PWM------------
 // Set Left Motor PWM to the given percent
 // Input: percent pwm_normal (range of 0 to 100)
 // Output: none
 // Assumes: Motor_Init() has been called
-void Set_Left_Motor_PWM(uint8_t pwm_normal)
+void Set_Left_Motor_PWM(uint8_t pwm_normal, bool rotate)
 {
     int pwm;
 
@@ -244,6 +226,10 @@ void Set_Left_Motor_PWM(uint8_t pwm_normal)
         pwm = MAX_PWM;
     if (pwm < 0)
         pwm = 0;
+    if (rotate)
+        pwm *= PWML_CORRECTION_FACTOR_ROTATE;
+    else
+        pwm *= PWML_CORRECTION_FACTOR_FORWARD;
     PWM_DutyL(pwm);
 }
 
@@ -252,7 +238,7 @@ void Set_Left_Motor_PWM(uint8_t pwm_normal)
 // Input: percent pwm_normal (range of 0 to 100)
 // Output: none
 // Assumes: Motor_Init() has been called
-void Set_Right_Motor_PWM(uint8_t pwm_normal)
+void Set_Right_Motor_PWM(uint8_t pwm_normal, bool rotate)
 {
     int pwm;
 
@@ -262,6 +248,10 @@ void Set_Right_Motor_PWM(uint8_t pwm_normal)
         pwm = MAX_PWM;
     if (pwm < 0)
         pwm = 0;
+    if (rotate)
+        pwm *= PWMR_CORRECTION_FACTOR_ROTATE;
+    else
+        pwm *= PWMR_CORRECTION_FACTOR_FORWARD;
     PWM_DutyR(pwm);
 }
 
@@ -314,8 +304,18 @@ void Rotate_Motors_By_Counts(uint8_t speed_factor, int left_count,
     Set_Right_Motor_Direction(right_count >= 0);
 
     // set motor PWM
-    Set_Left_Motor_PWM(speed_factor);
-    Set_Right_Motor_PWM(speed_factor);
+    if ((left_count > 0 && right_count < 0)
+            || (left_count < 0 && right_count > 0))
+    {
+        Set_Left_Motor_PWM(speed_factor, true);
+        Set_Right_Motor_PWM(speed_factor, true);
+    }
+
+    else
+    {
+        Set_Left_Motor_PWM(speed_factor, false);
+        Set_Right_Motor_PWM(speed_factor, false);
+    }
 
     left_error = abs(left_count) - Get_Left_Motor_Count();
     right_error = abs(right_count) - Get_Right_Motor_Count();
@@ -327,10 +327,10 @@ void Rotate_Motors_By_Counts(uint8_t speed_factor, int left_count,
     {
         // Stop individual motor if we are within the threshold
         if (left_error <= THRESHOLD_L)
-            Set_Left_Motor_PWM(0);
+            Set_Left_Motor_PWM(0, false);
 
         if (right_error <= THRESHOLD_R)
-            Set_Right_Motor_PWM(0);
+            Set_Right_Motor_PWM(0, false);
 
         left_error = abs(left_count) - Get_Left_Motor_Count();
         right_error = abs(right_count) - Get_Right_Motor_Count();
@@ -346,26 +346,25 @@ void Get_Current_Coordinates(int *x, int *y)
 
 void Navigate(float x1, float y1, float x2, float y2) // parameters are in feet
 {
-   float dist = Distance(x1, y1, x2, y2);
-   float ang = Angle(x1, y1, x2, y2);
-   int rotation_count = 0;
+    float dist = Distance(x1, y1, x2, y2);
+    float ang = Angle(x1, y1, x2, y2);
+    int rotation_count = 0;
 
-   // Initially turn the bot by the required angle
-   rotation_count = Angle_To_Rotation_Count(ang - current_angle);
-   Rotate_Motors_By_Counts(BOT_SPEED_PWM, rotation_count, -(rotation_count));
-   current_angle =  ang;
+    // Initially turn the bot by the required angle
+    rotation_count = Angle_To_Rotation_Count(ang - current_angle);
+    Rotate_Motors_By_Counts(BOT_SPEED_PWM, rotation_count, -(rotation_count));
+    current_angle = ang;
 
-   Clock_Delay1ms(1000);
+    Clock_Delay1ms(1000);
 
-   // Move the bot by required distance
-   rotation_count = Distance_To_Rotation_Count(dist);
-   Rotate_Motors_By_Counts(BOT_SPEED_PWM, rotation_count, rotation_count);
-   current_x = x2;
-   current_y = y2;
+    // Move the bot by required distance
+    rotation_count = Distance_To_Rotation_Count(dist);
+    Rotate_Motors_By_Counts(BOT_SPEED_PWM, rotation_count, rotation_count);
+    current_x = x2;
+    current_y = y2;
 
-   Clock_Delay1ms(1000);
+    Clock_Delay1ms(1000);
 }
-
 
 float Distance(int x1, int y1, int x2, int y2)
 {
@@ -373,10 +372,10 @@ float Distance(int x1, int y1, int x2, int y2)
     return distance;
 }
 
-float Angle(float x1, float y1, float x2, float y2) // angle in degrees
+float Angle(float x1, float y1, float x2, float y2)
 {
     float angle = atan2f(x2 - x1, y2 - y1);
-    angle *= (180/M_PI);
+    angle *= (180 / M_PI);
     return angle;
 }
 
@@ -384,13 +383,13 @@ int Distance_To_Rotation_Count(float distance) // distance in feet
 {
     // rotation count = (Distance/wheel perimeter) * 360
     distance *= 304.8; // feet to mm conversion
-    int count = (distance/(70 * M_PI)) * 360; // wheel diameter =  70mm => 1 rotation(360 degrees)
+    int count = (distance / (70 * M_PI)) * 360; // wheel diameter =  70mm => 1 rotation(360 degrees)
     return count;
 }
 
-int Angle_To_Rotation_Count(float degree)
+int Angle_To_Rotation_Count(float degree)  // angle in degrees
 {
     // rotation count = ((chassis perimeter/wheel perimeter) * angle_required) or ((chassis diameter/wheel diameter) * angle_required)
-    int count = (165/70) * degree;
+    int count = (165 / 70) * degree;
     return count;
 }

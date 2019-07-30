@@ -59,13 +59,12 @@ those of the authors and should not be interpreted as representing official
 policies, either expressed or implied, of the FreeBSD Project.
 */
 
-
+#include <stdbool.h>
 
 
 #ifndef MOTOR_H_
 #define MOTOR_H_
 
-// *******Lab 13 solution*******
 
 /**
  * Initialize GPIO pins for output, which will be
@@ -137,29 +136,10 @@ void Motor_Left(uint16_t leftDuty, uint16_t rightDuty);
  */
 void Motor_Backward(uint16_t leftDuty, uint16_t rightDuty);
 
-/**
- * Turn the robot to the Right by and angle of theta
- * @param theta (0 to 360)
- * @return none
- * @note Assumes Motor_Init() has been called
- * @brief  Turn the robot to the right
- */
-void Turn_Right(uint8_t t);
-
-/**
- * Turn the robot to the Left by and angle of theta
- * @param theta (0 to 360)
- * @return none
- * @note Assumes Motor_Init() has been called
- * @brief  Turn the robot to the left
- */
-void Turn_Left(uint8_t t);
-
-
 void Set_Left_Motor_Direction(int dir);
 void Set_Right_Motor_Direction(int dir);
-void Set_Left_Motor_PWM(uint8_t pwm_normal);
-void Set_Right_Motor_PWM(uint8_t pwm_normal);
+void Set_Left_Motor_PWM(uint8_t pwm_normal, bool rotate);
+void Set_Right_Motor_PWM(uint8_t pwm_normal, bool rotate);
 
 void Rotate_Motors_By_Counts(uint8_t speed_factor, int left_count, int right_count);
 float Distance(int x1, int y1, int x2, int y2);
