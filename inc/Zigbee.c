@@ -18,9 +18,6 @@
 
 volatile int DB = 0, M = 10, N = 10, Center = 4;
 volatile uint8_t positions[10][10];
-volatile uint8_t b_flag = 0;
-static bool min_flag = false;
-static int move_flag = 0;
 
 void UART1_Out(uint8_t *msg, int8_t len)
 {
@@ -211,19 +208,12 @@ bool Locate_Beacon(int currentdb, int *x1, int *y1)
     UART0_OutString("\n\n\r");
     for (i = N - 1; i >= 0; i--)
     {
-//        if (i == Center)
-//            UART0_OutString("\n\r");
         for (j = 0; j < M; j++)
         {
-//            if (j == Center)
-//                UART0_OutChar(' ');
             UART0_OutUDec(temp_positions[i][j]);
             UART0_OutChar(' ');
-//            if (j == Center)
-//                UART0_OutChar(' ');
         }
-//        if (i == Center)
-//            UART0_OutString("\n\r");
+
         UART0_OutChar('\n');
         UART0_OutChar('\r');
     }
@@ -236,10 +226,7 @@ bool Locate_Beacon(int currentdb, int *x1, int *y1)
     // set current coordinates to 0
     positions[curr_y][curr_x] = 0;
 
-    // next position = min(i+j) where position[i][j] == 1, if min_flag == 1
-    //                 max(i+j) where position[i][j] == 1, if min_flag == 0
-    // if all grid elements are zero, print "Lost"
-    int min_i = 9, min_j = 9, max_i = 0, max_j = 0, sum = 0, sum_i = 0, sum_j =
+    int sum = 0, sum_i = 0, sum_j =
             0, count = 0;
 
     *x1 = 100; //some big number
@@ -263,17 +250,6 @@ bool Locate_Beacon(int currentdb, int *x1, int *y1)
                 }
             }
 
-            if (positions[j][i] && ((i + j) < (min_i + min_j)))
-            {
-                min_i = i;
-                min_j = j;
-            }
-
-            if (positions[j][i] && ((i + j) > (max_i + max_j)))
-            {
-                max_i = i;
-                max_j = j;
-            }
         }
     }
 
@@ -284,45 +260,6 @@ bool Locate_Beacon(int currentdb, int *x1, int *y1)
         Red_On();
         return 0;
     }
-//
-//    if (min_flag)
-//    {
-//        *x1 = min_i;
-//        *y1 = min_j;
-//    }
-//
-//    else
-//    {
-//        *x1 = max_i;
-//        *y1 = max_j;
-//    }
-//
-
-    // toggle min_flag
-//    min_flag = !min_flag;
-
-//    *x1 = (min_i + max_i)/2;
-//    *y1 = (min_j + max_j)/2;
-
-//    if (move_flag % 3 == 0)
-//    {
-//        *x1 = max_j;
-//        *y1 = max_i;
-//    }
-//
-//    else if (move_flag % 3 == 1)
-//    {
-//        *x1 = sum_j / count;
-//        *y1 = sum_i / count;
-//    }
-//
-//    else
-//    {
-//        *x1 = min_j;
-//        *y1 = min_i;
-//    }
-//
-//    move_flag++;
 
     next = true;
     return next;
@@ -344,19 +281,11 @@ void Locations_Print()
     UART0_OutChar('\r');
     for (i = N - 1; i >= 0; i--)
     {
-//        if (i == Center)
-//            UART0_OutString("\n\r");
         for (j = 0; j < M; j++)
         {
-//            if (j == Center)
-//                UART0_OutChar(' ');
             UART0_OutUDec(positions[i][j]);
             UART0_OutChar(' ');
-//            if (j == Center)
-//                UART0_OutChar(' ');
         }
-//        if (i == Center)
-//            UART0_OutString("\n\r");
         UART0_OutChar('\n');
         UART0_OutChar('\r');
     }
